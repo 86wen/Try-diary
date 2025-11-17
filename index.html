@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>施工日記</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  display: flex;
+  height: 100vh;
+}
+.sidebar {
+  width: 200px;
+  background-color: #2c3e50;
+  color: white;
+  display: flex;
+  flex-direction: column;
+}
+.sidebar button {
+  background: none;
+  border: none;
+  color: white;
+  padding: 15px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 16px;
+}
+.sidebar button:hover, .sidebar button.active {
+  background-color: #34495e;
+}
+.content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+.hidden { display: none; }
+table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+th, td { padding: 8px; text-align: center; border: 1px solid #ccc; }
+input, select, textarea { width: 100%; padding: 5px; margin: 2px 0; box-sizing: border-box; }
+.progress-container { width: 100%; background-color: #e0e0e0; border-radius: 5px; overflow: hidden; height: 20px; }
+.progress-bar { height: 100%; background-color: #3498db; width: 0%; text-align: center; color: white; line-height: 20px; font-size: 12px; transition: width 0.3s; }
+.circular-progress { width: 150px; height: 150px; position: relative; margin: 20px auto; }
+.circular-progress svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+.circular-progress circle { fill: none; stroke-width: 12; stroke-linecap: round; }
+.circular-progress .bg { stroke: #e0e0e0; }
+.circular-progress .progress { stroke: #3498db; stroke-dasharray: 440; stroke-dashoffset: 440; transition: stroke-dashoffset 0.5s, stroke 0.5s; }
+.circular-progress text { fill: black; font-size: 20px; text-anchor: middle; dominant-baseline: middle; }
+.daily-log-media img, .daily-log-media video { max-width: 200px; max-height: 150px; margin: 5px; }
+/* 首頁日誌樣式 */
+.home-log {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+.home-log-date {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+.home-log-media img, .home-log-media video {
+  max-width: 200px;
+  max-height: 150px;
+  margin: 3px;
+  display: inline-block;
+}
+.home-log-text {
+  margin-top: 5px;
+}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <button class="tab-btn active" data-tab="home">首頁</button>
+  <button class="tab-btn" data-tab="progress">工程進度</button>
+  <button class="tab-btn" data-tab="daily">每日紀錄</button>
+  <button class="tab-btn" data-tab="summary">完工統計</button>
+</div>
+
+<div class="content">
+  <!-- 首頁 -->
+  <div id="home">
+    <h2>施工案件首頁</h2>
+    <label>施工案件名稱：</label>
+    <input type="text" id="project-name" placeholder="輸入案件名稱">
+
+    <h3>工程整體進度</h3>
+    <div class="circular-progress">
+      <svg>
+        <circle class="bg" cx="75" cy="75" r="70"></circle>
+        <circle class="progress" cx="75" cy="75" r="70"></circle>
+        <text x="75" y="75" id="progress-text">0%</text>
+      </svg>
+    </div>
+
+    <h3>最新日誌</h3>
+    <div id="latest-log">
+      尚無日誌
+    </div>
+    <!-- 首頁最新日誌區塊 -->
+    <h3>最新日誌</h3>
+    <div id="latest-logs-container"></div>
+    <button id="see-more-btn" style="margin-top:10px; padding:8px 12px; cursor:pointer;">看更多</button>
+  </div>
+
+  <!-- 工程進度 -->
+  <div id="progress" class="hidden">
+    <h2>工程進度表</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>工序</th>
+          <th>預計完成日</th>
+          <th>實際完成日</th>
+          <th>驗收狀態</th>
+          <th>進度</th>
+        </tr>
+      </thead>
+      <tbody id="progress-table">
+        <tr><td>開工入場</td><td><input type="date"></td><td><input type="date"></td><td><select onchange="updateProgressBar(this)"><option value="0">待驗收</option><option value="25">25%</option><option value="50">部分完成</option><option value="75">75%</option><option value="100">完成</option></select></td><td><div class="progress-container"><div class="progress-bar">0%</div></div></td></tr>
+        <tr><td>拆除</td><td><input type="date"></td><td><input type="date"></td><td><select onchange="updateProgressBar(this)"><option value="0">待驗收</option><option value="25">25%</option><option value="50">部分完成</option><option value="75">75%</option><option value="100">完成</option></select></td><td><div class="progress-container"><div class="progress-bar">0%</div></div></td></tr>
+        <tr><td>水電</td><td><input type="date"></td><td><input type="date"></td><td><select onchange="updateProgressBar(this)"><option value="0">待驗收</option><option value="25">25%</option><option value="50">部分完成</option><option value="75">75%</option><option value="100">完成</option></select></td><td><div class="progress-container"><div class="progress-bar">0%</div></div></td></tr>
+        <tr><td>木工</td><td><input type="date"></td><td><input type="date"></td><td><select onchange="updateProgressBar(this)"><option value="0">待驗收</option><option value="25">25%</option><option value="50">部分完成</option><option value="75">75%</option><option value="100">完成</option></select></td><td><div class="progress-container"><div class="progress-bar">0%</div></div></td></tr>
+        <tr><td>油漆</td><td><input type="date"></td><td><input type="date"></td><td><select onchange="updateProgressBar(this)"><option value="0">待驗收</option><option value="25">25%</option><option value="50">部分完成</option><option value="75">75%</option><option value="100">完成</option></select></td><td><div class="progress-container"><div class="progress-bar">0%</div></div></td></tr>
+        <tr><td>保潔</td><td><input type="date"></td><td><input type="date"></td><td><select onchange="updateProgressBar(this)"><option value="0">待驗收</option><option value="25">25%</option><option value="50">部分完成</option><option value="75">75%</option><option value="100">完成</option></select></td><td><div class="progress-container"><div class="progress-bar">0%</div></div></td></tr>
+        <tr><td>完工</td><td><input type="date"></td><td><input type="date"></td><td><select onchange="updateProgressBar(this)"><option value="0">待驗收</option><option value="25">25%</option><option value="50">部分完成</option><option value="75">75%</option><option value="100">完成</option></select></td><td><div class="progress-container"><div class="progress-bar">0%</div></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 每日紀錄 -->
+  <div id="daily" class="hidden">
+    <h2>每日施工紀錄</h2>
+    <label>日誌人：</label>
+    <input type="text" id="log-person" placeholder="填寫日誌人姓名">
+    <textarea id="daily-log" rows="5" placeholder="輸入每日施工紀錄..."></textarea>
+    <label>上傳照片/影片：</label>
+    <input type="file" id="media-input" multiple accept="image/*,video/*">
+    <button id="save-log-btn">儲存紀錄</button>
+    <h3>歷史紀錄</h3>
+    <ul id="log-list"></ul>
+  </div>
+
+  <!-- 完工統計 -->
+  <div id="summary" class="hidden">
+    <h2>完工統計</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>工序</th>
+          <th>完成百分比</th>
+        </tr>
+      </thead>
+      <tbody id="summary-table"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// 分頁切換
+const tabs = document.querySelectorAll('.tab-btn');
+const contents = document.querySelectorAll('.content > div');
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    tabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    contents.forEach(c => c.classList.add('hidden'));
+    document.getElementById(tab.dataset.tab).classList.remove('hidden');
+    if(tab.dataset.tab === 'summary') updateSummary();
+    if(tab.dataset.tab === 'home') { updateHomeProgress(); updateLatestLogs(); }
+  });
+});
+
+// 更新進度條
+function updateProgressBar(select) {
+  const progressBar = select.parentElement.nextElementSibling.querySelector('.progress-bar');
+  const value = Number(select.value || 0);
+  progressBar.style.width = value + '%';
+  progressBar.textContent = value + '%';
+  updateHomeProgress();
+  updateTaskOverview();
+}
+
+// 每日紀錄
+function saveLog() {
+  const logText = document.getElementById('daily-log').value.trim();
+  const person = document.getElementById('log-person').value.trim();
+  const mediaInput = document.getElementById('media-input');
+  if(!logText || !person) return alert('請填寫日誌內容和日誌人');
+
+  const li = document.createElement('li');
+  const date = new Date().toLocaleDateString();
+  li.innerHTML = `<strong>${person}</strong> (${date}): ${escapeHtml(logText)}<div class="daily-log-media"></div>`;
+  
+  const mediaDiv = li.querySelector('.daily-log-media');
+  for(const file of mediaInput.files) {
+    const url = URL.createObjectURL(file);
+    if(file.type.startsWith('image/')) {
+      const img = document.createElement('img');
+      img.src = url;
+      mediaDiv.appendChild(img);
+    } else if(file.type.startsWith('video/')) {
+      const video = document.createElement('video');
+      video.src = url;
+      video.controls = true;
+      mediaDiv.appendChild(video);
+    }
+  }
+
+  document.getElementById('log-list').prepend(li);
+  document.getElementById('daily-log').value = '';
+  document.getElementById('log-person').value = '';
+  mediaInput.value = '';
+  updateHomeProgress();
+  updateLatestLogs();
+}
+
+// 更新完工統計
+function updateSummary() {
+  const rows = document.querySelectorAll('#progress-table tr');
+  const tbody = document.getElementById('summary-table');
+  tbody.innerHTML = '';
+  rows.forEach(row => {
+    const task = row.cells[0].textContent;
+    const value = Number(row.cells[3].querySelector('select').value || 0);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${escapeHtml(task)}</td><td>${value}%</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// 更新首頁圓形進度條
+function updateHomeProgress() {
+  const rows = document.querySelectorAll('#progress-table tr');
+  if (rows.length === 0) return;
+  let total = 0;
+  rows.forEach(r => {
+    total += parseInt(r.cells[3].querySelector('select').value || 0);
+  });
+  const percent = Math.round(total / rows.length);
+  const circle = document.querySelector('.circular-progress .progress');
+  const text = document.getElementById('progress-text');
+  const offset = 440 - (440 * percent / 100);
+  circle.style.strokeDashoffset = offset;
+  // 顏色變化
+  if(percent < 30) circle.style.stroke = '#e74c3c';
+  else if(percent < 70) circle.style.stroke = '#f1c40f';
+  else circle.style.stroke = '#2ecc71';
+  text.textContent = percent + '%';
+
+  updateTaskOverview(); // 每次更新首頁進度條同時更新小圓圈
+}
+
+// 更新首頁最新日誌（顯示多筆，並顯示媒體）
+function updateLatestLogs() {
+  const logs = document.getElementById('log-list');
+  const container = document.getElementById('latest-logs-container');
+  const latestDiv = document.getElementById('latest-log');
+  if (!container) return;
+  container.innerHTML = '';
+  // 若沒有任何日誌，顯示預設文字在首頁上的簡短區塊
+  if (!logs || logs.children.length === 0) {
+    latestDiv.innerHTML = '尚無日誌';
+    return;
+  } else {
+    latestDiv.innerHTML = '';
+  }
+
+  const maxLogs = 5;
+  for (let i = 0; i < Math.min(logs.children.length, maxLogs); i++) {
+    const log = logs.children[i];
+    const div = document.createElement('div');
+    div.className = 'home-log';
+
+    const fullHtml = log.innerHTML;
+    // 解析日期 (假設格式為: <strong>姓名</strong> (日期): 內容 ...)
+    const match = fullHtml.match(/\((.*?)\):/);
+    const dateText = match ? match[1] : '';
+
+    const mediaHtml = log.querySelector('.daily-log-media') ? log.querySelector('.daily-log-media').innerHTML : '';
+    // 取得內文：找出 "):\s*` 後、在 media div 前的文字
+    let text = '';
+    const textMatch = fullHtml.match(/\):\s*([\s\S]*?)(?:<div class="daily-log-media"|$)/);
+    if (textMatch && textMatch[1]) text = textMatch[1].trim();
+
+    div.innerHTML = `
+      <div class="home-log-date">${escapeHtml(dateText)}</div>
+      <div class="home-log-media">${mediaHtml}</div>
+      <div class="home-log-text">${escapeHtml(text)}</div>
+    `;
+    container.appendChild(div);
+  }
+}
+
+// 各工序進度概覽
+function updateTaskOverview() {
+  const containerId = 'task-overview';
+  let container = document.getElementById(containerId);
+  if (!container) {
+    const home = document.getElementById('home');
+    if (!home) return;
+    const h = document.createElement('h3'); h.textContent = '各工序進度概覽';
+    container = document.createElement('div'); container.id = containerId; container.style.display = 'flex'; container.style.flexWrap = 'wrap'; container.style.gap = '15px';
+    home.appendChild(h); home.appendChild(container);
+  }
+  container.innerHTML = '';
+  const rows = document.querySelectorAll('#progress-table tr');
+  rows.forEach(r => {
+    const taskName = r.cells[0].textContent;
+    const percent = parseInt(r.cells[3].querySelector('select').value || 0);
+
+    const card = document.createElement('div');
+    card.style.width = '120px';
+    card.style.height = '80px';
+    card.style.borderRadius = '8px';
+    card.style.display = 'flex';
+    card.style.flexDirection = 'column';
+    card.style.alignItems = 'center';
+    card.style.justifyContent = 'center';
+    card.style.color = 'white';
+    card.style.fontSize = '12px';
+    card.style.padding = '6px';
+    if(percent < 30) card.style.background = '#e74c3c';
+    else if(percent < 70) card.style.background = '#f1c40f';
+    else card.style.background = '#2ecc71';
+
+    const nameSpan = document.createElement('div'); nameSpan.textContent = taskName; nameSpan.style.fontSize = '13px'; nameSpan.style.marginBottom = '6px';
+    const pSpan = document.createElement('div'); pSpan.textContent = percent + '%'; pSpan.style.fontWeight = '700';
+    card.appendChild(nameSpan); card.appendChild(pSpan);
+    container.appendChild(card);
+  });
+}
+
+// 基本工具與事件
+function escapeHtml(str){ return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// 綁定儲存按鈕
+document.addEventListener('click', (e) => {
+  if (e.target && e.target.id === 'save-log-btn') saveLog();
+});
+
+// 初始化首頁視覺
+updateHomeProgress();
+// 初始化首頁最新日誌區塊
+updateLatestLogs();
+
+// 綁定「看更多」按鈕
+const seeMoreBtn = document.getElementById('see-more-btn');
+if (seeMoreBtn) {
+  seeMoreBtn.addEventListener('click', () => {
+    // 切換到每日紀錄頁
+    tabs.forEach(t => t.classList.remove('active'));
+    contents.forEach(c => c.classList.add('hidden'));
+    const dailyTab = document.querySelector('.tab-btn[data-tab="daily"]');
+    if (dailyTab) dailyTab.classList.add('active');
+    const daily = document.getElementById('daily');
+    if (daily) daily.classList.remove('hidden');
+  });
+}
+</script>
+
+</body>
+</html>
